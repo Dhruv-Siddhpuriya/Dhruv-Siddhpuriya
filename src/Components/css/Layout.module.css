@@ -195,11 +195,9 @@
     transition: transform 0.3s ease;
     z-index: 1300;
   }
-
   .sidebar.open {
     transform: translateX(0);
   }
-
 }
 
 
