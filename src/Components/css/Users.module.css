@@ -1,0 +1,199 @@
+.wrapper {
+  min-height: 100vh;
+
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+}
+.container {
+  padding: 25px;
+  backdrop-filter: blur(10px);
+}
+  
+.title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 26px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+  
+  .tableWrapper {
+    width: 100%;
+
+    overflow-y: auto;   /* 👈 vertical scroll */
+    overflow-x: auto;   /* 👈 horizontal scroll */
+  }
+  
+  .table {
+    min-width: 700px;
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    background: #1e293b;
+    color: #e2e8f0;
+  }
+  .table td {
+    border: 1px solid #475569;
+  }
+  .table th,
+  .table td {
+   
+    padding: 10px;
+  }
+  .table th:nth-child(1),
+.table td:nth-child(1) {
+  width: 80px;   /* Sr No column */
+}
+.table th:nth-child(5),
+.table td:nth-child(5) {
+  width: 100px;   /* Sr No column */
+}
+.table th {
+  background: #334155;
+  color: #f8fafc;
+  border: 1px solid #475569;
+}
+  .table th:nth-child(3),
+.table td:nth-child(3) {
+
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.select {
+  padding: 6px;
+  background: #0f172a;
+  color: #e2e8f0;
+  border: 1px solid #475569;
+  border-radius: 4px;
+}
+  
+  .button {
+    padding: 6px 12px;
+    background-color: #007bff;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .button:hover {
+    background-color: #0056b3;
+  }
+  .table tbody tr:hover {
+    background: #334155;
+  }
+  .noData {
+    text-align: center;
+    margin-top: 15px;
+    color: gray;
+  }
+  .saveBtn {
+    background: linear-gradient(90deg, #22c55e, #16a34a) !important;
+    color: white !important;
+    border: none  !important;
+    padding: 6px 12px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+   
+  }
+  
+  .saveBtn:hover {
+    transform: scale(1.10) rotate(0deg) translate(0px, 0px) skewX(0deg) !important;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3) !important;
+    opacity: 1 !important;
+    filter: brightness(1) !important;
+    color: #000000  !important;
+    border-bottom-color: #667eea !important;
+  }
+  /* Search Bar Container (optional if you want spacing) */
+  .searchInput {
+    width: 300px;
+    padding: 10px 14px;
+    margin-bottom: 15px;
+    border: 1px solid #cbd5e1;
+  
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+   
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+  
+    border-radius: 10px;
+  }
+  
+
+/* Focus effect */
+.searchInput:focus {
+ 
+  box-shadow: 0 0px 5px rgba(255, 255, 255, 0.8);
+}
+
+
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.pagination button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(10px);
+
+  border-radius: 10px;
+}
+.btn{
+  width:300px;
+    position:relative;
+     margin-top:-45px;
+      margin-left:600px;
+}
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+@media (max-width: 768px){
+  .table{
+    font-size: 14px;
+
+  }
+  .table th:nth-child(1),
+.table td:nth-child(1) {
+  width: 60px;   /* Sr No column */
+}
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  width: 60px;   /* Sr No column */
+}
+.table th:nth-child(5),
+.table td:nth-child(5) {
+  width: 80px;   /* Sr No column */
+ 
+}
+.table th:nth-child(3),
+.table td:nth-child(3) {
+  width: 150px;   /* Sr No column */
+}
+.table th:nth-child(4),
+.table td:nth-child(4) {
+  width: 100px;   /* Sr No column */
+}
+.table td select{
+  width: 80px;
+}
+.table tbody tr:hover {
+  background: none;
+}
+.btn{
+  width:200px;
+    position:relative;
+     margin-top:-45px;
+      margin-left:50px;
+}
+}

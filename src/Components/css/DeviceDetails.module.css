@@ -1,0 +1,252 @@
+.container {
+  padding: 20px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  min-height: 100vh;
+}
+
+/* Card */
+.card {
+  background: #e2e2e2;
+  padding: 25px;
+  border-radius: 14px;
+  max-width: 500px;
+  margin: auto;
+
+  /* 🔥 shadow */
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+
+
+}
+
+
+
+/* Title */
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+/* Input group */
+.inputGroup {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Input */
+.input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.input:focus {
+  border-color: #1976d2;
+  outline: none;
+}
+
+/* Button */
+.button {
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #1976d2, #42a5f5);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.button:hover {
+  background: linear-gradient(135deg, #125ea2, #1976d2);
+  transform: translateY(-2px);
+}
+
+/* Result text */
+.result {
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #444;
+}
+
+/* Highlight */
+.highlight {
+  color: #2e7d32;
+  font-weight: 600;
+  font-size: 20px;
+}
+
+/* Back button */
+.backButton {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 15px;
+  gap: 10px; 
+}
+.backButton h3{
+  font-size: 16px;
+  color: #d0d0d0;
+}
+
+.backButton button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #1976d2;
+  transition: 0.2s;
+}
+
+.backButton button:hover {
+  color: #1e519e;
+
+}
+
+/* 🔥 OPTIONAL: Status badge (use later) */
+.statusBadge {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.inactive {
+  background-color: #fdecea;
+  color: #c62828;
+}
+
+
+
+.logItem:hover {
+  background: #eef4ff;
+}
+/* 🔥 Main row layout */
+.rowContainer {
+  display: flex;
+  gap: 20px;
+  margin: 30px auto;
+
+
+  width: 100%;
+
+}
+
+/* LEFT - Chart */
+.chartBox {
+  background: #e2e2e2;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  color: #2c3e50;
+  width: 100%;        /* ✅ IMPORTANT */
+  height: 400px;      /* ✅ FIXED HEIGHT */
+  min-height: 300px;  /* ✅ fallback */
+}
+
+/* RIGHT - Logs */
+
+.chartBox,
+.logsCard {
+  flex: 1;
+  min-width: 0;  /* 🔥 VERY IMPORTANT (fix flex overflow issue) */
+}
+/* Log items */
+.logItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 10px;
+  margin-top: 8px;
+  background: #f9fafc;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.logItem:hover {
+  background: #eef4ff;
+}
+.logsCard {
+  background: #e2e2e2;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  height: 400px;
+  color: #2c3e50;
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden; /* 🔥 IMPORTANT (fix border radius) */
+}
+
+/* HEADER (fixed) */
+.logsHeader {
+  padding: 12px 15px;
+  font-weight: 600;
+  background: #e2e2e2;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.chartHeader{
+  margin-bottom: 20px;
+}
+/* SCROLLABLE BODY */
+.logsBody {
+  padding: 10px;
+  overflow-y: auto;
+  flex: 1;
+}
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chartHeader button {
+  background: #1e293b;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.chartHeader button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+@media (max-width: 768px) {
+  .rowContainer {
+    flex-direction: column;
+  }
+  
+  .backButton button {
+    display: none;
+  }
+  .backButton {
+    justify-content: center;
+  }
+  .chartBox {
+    height: 300px; /* ✅ force height in mobile */
+  }
+
+  .logsCard {
+    height: 300px; /* optional but better UX */
+  }
+  .backButton h3 {
+    text-align: center;
+    width: 100%;
+    font-size: 18px;
+    font-weight: 600;
+  }
+}

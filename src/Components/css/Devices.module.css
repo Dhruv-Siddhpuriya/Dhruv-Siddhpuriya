@@ -1,0 +1,234 @@
+.wrapper {
+  padding: 30px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  display: flex;
+  justify-content: center;   /* center horizontally */
+  align-items: flex-start;   /* top aligned */
+}
+.container {
+  width: 100%;
+  
+  position: relative;
+
+}
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    color: white;
+  }
+  
+  .addBtn {
+    background: #1976d2 !important;
+    color: white !important;
+    border-radius: 6px !important;
+    text-transform: none !important;
+    padding-top: 9px !important;;
+    min-width: 80px !important;
+   
+  }
+  .addBtn:hover{
+    transition: 0.3s;
+    background: #2259ce;
+  }
+  
+  .form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;   /* align inputs and button in one line */
+    margin-bottom: 20px;
+
+  }
+  
+  
+  .formRow {
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+    gap: 10px;
+  
+
+ 
+  }
+
+
+  
+  .savebtn {
+    background: linear-gradient(90deg, #22c55e, #16a34a) !important;
+    color: white !important;
+    border: none  !important;
+    padding: 6px 12px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+    height: 43px !important;
+    width: 80px !important;
+  }
+  .savebtn:hover {
+    transform: scale(1.10) rotate(0deg) translate(0px, 0px) skewX(0deg) !important;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3) !important;
+    opacity: 1 !important;
+    filter: brightness(1) !important;
+    color: #000000  !important;
+    border-bottom-color: #667eea !important;
+  }
+  .tableWrapper {
+    width: 100%;
+    overflow-y: auto;   /* 👈 vertical scroll */
+    overflow-x: auto;   /* 👈 horizontal scroll */
+  }
+  /* TABLE */
+  .table {
+    min-width: 700px;
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    table-layout: fixed;
+    background: transparent;
+    color: white;
+  }
+  
+  .table th,
+  .table td {
+    padding: 14px;
+    border-bottom: 1px solid #40454f;
+  }
+  
+  .active {
+    color: rgb(4, 196, 4);
+    font-weight: 600;
+  }
+  
+  .inactive {
+    color: rgb(245, 41, 41);
+    font-weight: 600;
+  }
+  
+  /* TOGGLE */
+  .switch {
+    position: relative;
+    width: 44px;
+    height: 22px;
+    display: inline-block;
+  }
+  
+  .switch input {
+    opacity: 0;
+  }
+  
+  .slider {
+    position: absolute;
+    inset: 0;
+    background: #d1d5db;
+    border-radius: 20px;
+   
+  }
+  
+  .slider::before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    background: white;
+    left: 3px;
+    bottom: 2px;
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+  
+  .switch input:checked + .slider {
+    background: #16a34a;
+  }
+  
+  .switch input:checked + .slider::before {
+    transform: translateX(20px);
+  }
+  .search {
+    width: 300px;
+    padding: 10px 14px;
+    margin-bottom: 15px;
+    border: 1px solid #cbd5e1;
+  
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+   
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+  
+    border-radius: 10px;
+  }
+  /* Focus effect */
+.search:focus {
+  box-shadow: 0 0px 5px rgba(255, 255, 255, 0.8);
+}
+
+/* Placeholder style */
+
+  /* Delete button */
+.deleteBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #ef4444;
+  margin-left: 15px;
+}
+
+.deleteBtn:hover {
+  transform: scale(1.1);
+  transition: 0.2s;
+}
+  .pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    color: white;
+  }
+  
+  .pagination button {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+  
+    border-radius: 10px;
+  }
+  
+  .pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  @media (max-width: 768px) {
+    .table{
+       font-size: 12px;
+      
+    }
+    .search{
+      max-width: 250px;
+    }
+    .wrapper{
+      margin: 0 auto;
+      width: 100%;
+    
+   
+    }
+    .header {
+      padding-left: 20px; /* ☰ width + small gap */
+      margin-bottom: 10px;
+      margin-top: -9px;
+      align-items: center;
+    }
+    .snackbar{
+      margin-Left: 0;
+    }
+  
+   }
+   
+  

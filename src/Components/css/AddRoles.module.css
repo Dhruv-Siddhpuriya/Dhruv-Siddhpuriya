@@ -1,0 +1,84 @@
+.wrapper{
+width: 100%;
+height: 100vh;
+padding-top: 70px;
+
+
+  /* Modern gradient background */
+ background: linear-gradient(135deg, #0f172a, #1e293b);
+}
+.container {
+   
+   max-width: 500px;
+   margin: 0 auto;
+   background: rgb(255, 255, 255);
+  backdrop-filter: blur(10px);
+
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+    padding: 25px 30px;
+    border-radius: 10px;
+   
+    font-family: Arial, sans-serif;
+   
+  }
+
+  .title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .formGroup {
+    margin-bottom: 15px;
+  }
+  
+  .input {
+    width: 100%;
+    padding: 10px 12px;
+   
+    color: white !important;
+    font-size: 10px;
+    font-weight: bold !important;
+
+  }
+  
+
+  
+  .permissions {
+    display: flex;
+    gap: 20px;
+    margin: 15px 0;
+  }
+  
+  .permissionLabel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+  }
+  
+  .button {
+   
+    padding-top: 10px !important;
+     background-color: #1976d2;
+     color: #fff;
+     border: none;
+     border-radius: 6px;
+     font-size: 15px;
+     cursor: pointer;
+     margin-top: 10px  !important;
+     transition: background 0.2s;
+   }
+  
+  .button:hover {
+    background: #357abd;
+  }
+  @media(max-width: 768px){
+    .container{
+      
+      margin: 20px;
+    }
+  }

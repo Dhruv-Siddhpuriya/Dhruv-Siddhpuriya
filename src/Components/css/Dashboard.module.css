@@ -1,0 +1,238 @@
+.dash {
+  width: 100%;
+  /* Modern gradient background */
+ background: linear-gradient(135deg, #0f172a, #1e293b);
+
+}
+/* CENTERED CONTENT */
+.main {
+ margin: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+/* HEADER */
+.welcome {
+  text-align: center;
+  border-bottom: none;
+  padding-bottom: 10px;
+  margin-bottom: 30px;
+  margin-left: 20px;
+  margin-right: 20px;
+  padding-top: 15px;
+
+  font-size: 28px;
+  font-weight: 600;
+  color: white;
+  /* Modern gradient text */
+
+
+}
+
+/* FILTER BAR */
+.filterBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.datePicker {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: rgb(255, 255, 255);
+  backdrop-filter: blur(10px);
+  height: 30px;
+  border-radius: 6px;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 5px; /* proper spacing */
+  align-items: center;
+  margin-left: 5px;
+}
+
+/* Shared button style */
+.applyBtn,
+.clearBtn {
+  background: #1976d2 !important;
+  color: white !important;
+  border-radius: 6px !important;
+  text-transform: none !important;
+  padding: 6px 16px !important;
+  min-width: 80px !important;
+  height: 30px;
+}
+
+/* Hover */
+.applyBtn:hover,
+.clearBtn:hover {
+  background: #125ea2 !important;
+}
+
+.applyBtn:hover,
+.clearBtn:hover {
+  background-color: #0959a9;
+}
+
+/* CHARTS */
+.charts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 40px;
+  max-width: 1550px;
+  width: 100%;
+
+}
+
+
+/* HEADER CAN GROW */
+.chartHeader {
+  text-align: center;
+  min-height: 90px; /* ✅ reserve space for long titles */
+
+}
+
+/* CHART NEVER MOVES */
+.chartBody {
+  height: 300px;        /* 🔒 fixed */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chartWide {
+  max-width: 1350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+ padding: 15px;
+ background: rgb(255, 255, 255);
+ backdrop-filter: blur(10px);
+
+ border-radius: 14px;
+ box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+
+ transition: all 0.3s ease;
+ 
+}
+.chart
+ {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+  padding: 20px;
+padding-right: 30px;
+  /* Glass style card */
+  background: rgb(255, 255, 255);
+  backdrop-filter: blur(10px);
+
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+
+  transition: all 0.3s ease;
+}
+/* SELECT */
+.slc select {
+  width: 160px;
+  padding: 6px;
+  margin: 10px 0 20px;
+}
+
+/* MAP TITLE */
+.sectionTitle {
+  margin-top: 60px;
+  margin-bottom: 20px;
+  text-align: center;
+  color: white;
+}
+
+/* BUTTON */
+.btn {
+  display: block;
+  margin: 30px auto 0;
+  padding: 12px 30px;
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+
+.btn:hover {
+  background-color: #5a67d8;
+}
+.customFieldContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 15px;
+  justify-content: center;
+  align-items: center;
+}
+
+.customField {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  margin-bottom: 40px;
+}
+.dateRangeField {
+  background-color: #ffffff !important;
+  border-radius: 8px;
+}
+
+/* Input text color */
+.dateRangeField input {
+  color: #ffffff !important;
+}
+
+/* Border color */
+.dateRangeField .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Hover border */
+.dateRangeField:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #ffffff !important;
+}
+
+/* Focus border */
+.dateRangeField.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #ffffff !important;
+}
+
+/* Calendar icon color */
+.dateRangeField .MuiSvgIcon-root {
+  color: #ffffff !important;
+}
+/* MOBILE */
+@media (max-width: 768px) {
+ 
+  .main {
+    padding: 15px;
+    
+  }
+  .welcome {
+    font-size: 22px;
+  }
+  .charts {
+    flex-direction: column;
+    gap: 30px;
+  }
+  .chart,
+  .chartWide {
+    max-width: 100%;
+  }
+  .buttonGroup{
+    margin-top: 10px;
+  }
+}

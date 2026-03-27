@@ -1,0 +1,56 @@
+.container {
+   padding: 20px;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    min-height: 100vh;
+  }
+  
+  .card {
+    background: #ffffff;
+    padding: 20px;
+  border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  .title {
+    font-size: 22px;
+    font-weight: 600;
+   
+    color: #0f172a;
+  }
+  
+  /* DataGrid Styling */
+  .dataGrid {
+    border: none !important;
+    font-size: 14px;
+  }
+  
+  /* Header */
+  .dataGrid :global(.MuiDataGrid-columnHeaders) {
+    background-color: #1e293b;
+    color: rgb(0, 0, 0);
+    font-weight: bold;
+  }
+  
+  /* Rows */
+  .dataGrid :global(.MuiDataGrid-row) {
+    background-color: #f8fafc;
+  }
+  
+  .dataGrid :global(.MuiDataGrid-row:nth-child(even)) {
+    background-color: #eef2f7;
+  }
+  
+  /* Hover */
+  .dataGrid :global(.MuiDataGrid-row:hover) {
+    background-color: #dbeafe !important;
+  }
+  
+  /* Cell */
+  .dataGrid :global(.MuiDataGrid-cell) {
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  /* Footer */
+  .dataGrid :global(.MuiDataGrid-footerContainer) {
+    background-color: #f1f5f9;
+  }
