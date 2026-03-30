@@ -25,7 +25,8 @@ function LoginForm(){
       },
       body: JSON.stringify({email,password}),
     })
-   
+    console.log("BASE URL:", API_BASE_URL);
+    console.log("FINAL URL:", `${API_BASE_URL}/login`);
 
     const data = await res.json();
   
