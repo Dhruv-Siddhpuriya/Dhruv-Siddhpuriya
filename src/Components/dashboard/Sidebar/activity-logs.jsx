@@ -7,7 +7,7 @@ const ActivityLogs = () => {
 
   const [rows, setRows] = useState([]);
 
-
+    
    useEffect(() => {
     fetchLogs();
    }, []);
@@ -53,7 +53,7 @@ const ActivityLogs = () => {
     { field: "index", headerName: "", width: 70 },
     {field: "userId", headerName: "User ID", flex: 1 },
     { field: "name", headerName: "User Name", flex: 1 },
-    { field: "registeredAt", headerName: "Registered At", flex: 1 },
+    { field: "registeredAt", headerName: "Registered On", flex: 1 },
     { field: "loginTime", headerName: "Login Time", flex: 1 },
     { field: "ipAddress", headerName: "IP Address", flex: 1 },
     { field: "device", headerName: "Device", flex: 1 },
