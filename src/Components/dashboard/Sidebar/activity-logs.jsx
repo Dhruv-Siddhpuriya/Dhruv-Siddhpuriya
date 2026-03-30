@@ -51,11 +51,11 @@ const ActivityLogs = () => {
   };
   const columns = [
     { field: "index", headerName: "", width: 70 },
-    {field: "userId", headerName: "User ID", flex: 1 },
-    { field: "name", headerName: "User Name", flex: 1 },
-    { field: "registeredAt", headerName: "Registered On", flex: 1 },
-    { field: "loginTime", headerName: "Login Time", flex: 1 },
-    { field: "ipAddress", headerName: "IP Address", flex: 1 },
+    {field: "userId", headerName: "User ID", flex: 1.3 },
+    { field: "name", headerName: "User Name", flex: 0.8 },
+    { field: "registeredAt", headerName: "Registered On", flex: 1.2 },
+    { field: "loginTime", headerName: "Login Time", flex: 1.2 },
+    { field: "ipAddress", headerName: "IP Address", flex: 0.8 },
     { field: "device", headerName: "Device", flex: 1 },
   ];
 

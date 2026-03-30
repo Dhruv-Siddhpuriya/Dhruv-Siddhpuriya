@@ -21,7 +21,7 @@ const userRoutes = require("./routes/userRoutes");
 const upload = require("./utils/upload");
 const compression = require("compression");
 const activityLogs = require("./routes/activityLogs");
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -590,7 +590,6 @@ if (!strongPasswordRegex.test(password)) {
   });
   
  
-  app.listen(PORT,"0.0.0.0", () => {
-    console.log("Server is running on Port : " +PORT);
-
-})
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log("Server running on " + PORT);
+  });
