@@ -4,6 +4,13 @@
   const mongoose = require("mongoose");
   const checkPermission = require("../middleware/checkPermission");
   const upload = require("../utils/upload");   // path to your upload.js
+  // Convert a UTC date to IST
+const toIST = (utcDate) => {
+  const d = new Date(utcDate);
+  d.setHours(d.getHours() + 5);
+  d.setMinutes(d.getMinutes() + 30);
+  return d;
+};
   /* 🔑 Generate alphanumeric device ID */
   const generateDeviceId = () => {
     return "DEV-" + crypto.randomBytes(4).toString("hex").toUpperCase();
@@ -361,17 +368,14 @@ router.get("/:id/usage-history", async (req, res) => {
         const overlapEnd = end < dayEnd ? end : dayEnd;
     
         if (overlapStart < overlapEnd) {
-          // ✅ LOCAL DATE FIX
-          const dateKey = dayStart.toLocaleDateString("en-CA");
+          // ✅ Use IST
+          const dateKey = toIST(dayStart).toISOString().split("T")[0];
     
-          if (!dailyUsage[dateKey]) {
-            dailyUsage[dateKey] = 0;
-          }
+          if (!dailyUsage[dateKey]) dailyUsage[dateKey] = 0;
     
-          dailyUsage[dateKey] += (overlapEnd - overlapStart);
+          dailyUsage[dateKey] += overlapEnd - overlapStart;
         }
     
-        // ✅ IMPORTANT FIX (move to next day correctly)
         start = new Date(dayStart);
         start.setDate(start.getDate() + 1);
       }
@@ -464,20 +468,19 @@ router.get("/:id/activity-logs", async (req, res) => {
     const logs = [];
 
     device.activityLogs.forEach(log => {
+      if (!log.endTime) return;
     
-if (!log.endTime) return;
-
-let start = new Date(log.startTime);
-let end = new Date(log.endTime);
-
+      let start = new Date(log.startTime);
+      let end = new Date(log.endTime);
+    
       // check overlap
       const overlapStart = start > dayStart ? start : dayStart;
       const overlapEnd = end < dayEnd ? end : dayEnd;
-
+    
       if (overlapStart < overlapEnd) {
         logs.push({
-          startTime: overlapStart,
-          endTime: overlapEnd
+          startTime: toIST(overlapStart),
+          endTime: toIST(overlapEnd)
         });
       }
     });
