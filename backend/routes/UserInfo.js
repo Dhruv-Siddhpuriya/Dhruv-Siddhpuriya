@@ -1,5 +1,4 @@
 const router = require("express").Router();
-const client = require("../utils/redisClient");
 const User = require("../user"); // adjust if your path is different
 const upload = require("../middleware/upload");
 // 🔹 GET USER PROFILE
