@@ -58,7 +58,7 @@ const router = require("express").Router();
  */
 router.get("/", async (req, res) => {
 try{
-const logs = await UserSession.aggregate([
+const logs = await UserSession.aggregate([  
     {
         $lookup:{
             from: "users",
