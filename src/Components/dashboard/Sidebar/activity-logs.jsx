@@ -1,30 +1,32 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import {API_BASE_URL} from "../../../config/api";
+import { API_BASE_URL } from "../../../config/api";
 import { DataGrid } from "@mui/x-data-grid";
 import styles from "../../css/ActivityLogs.module.css";
+
 const ActivityLogs = () => {
-
   const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true); // ✅ new loading state
 
-    
-   useEffect(() => {
+  useEffect(() => {
     fetchLogs();
-   }, []);
+  }, []);
+
   const fetchLogs = async () => {
     try {
-        const token = sessionStorage.getItem("token");
-    
-        const res = await axios.get(`${API_BASE_URL}/api/activity-logs`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      const token = sessionStorage.getItem("token");
+      setLoading(true); // ✅ start loading
 
-      const formattedLogs = res.data.map((item,index) => ({
+      const res = await axios.get(`${API_BASE_URL}/api/activity-logs`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const formattedLogs = res.data.map((item, index) => ({
         id: item._id,
         index: index + 1,
-        name: item.name || "N/A", // ✅ ADD THIS
+        name: item.name || "N/A",
         userId: item.userId,
         registeredAt: formatIST(item.registeredAt),
         loginTime: formatIST(item.loginTime),
@@ -32,13 +34,15 @@ const ActivityLogs = () => {
         device: item.device || "Unknown",
       }));
       setRows(formattedLogs);
-    }catch(err){
-        console.error("API ERROR:", err.response?.data || err.message);
+    } catch (err) {
+      console.error("API ERROR:", err.response?.data || err.message);
+    } finally {
+      setLoading(false); // ✅ stop loading
     }
-  }
+  };
+
   const formatIST = (dateString) => {
     if (!dateString) return "N/A";
-  
     return new Date(dateString).toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
       day: "2-digit",
@@ -46,12 +50,13 @@ const ActivityLogs = () => {
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      hour12: true
+      hour12: true,
     });
   };
+
   const columns = [
     { field: "index", headerName: "", width: 70 },
-    {field: "userId", headerName: "User ID", flex: 1.3 },
+    { field: "userId", headerName: "User ID", flex: 1.3 },
     { field: "name", headerName: "User Name", flex: 0.8 },
     { field: "registeredAt", headerName: "Registered On", flex: 1.2 },
     { field: "loginTime", headerName: "Login Time", flex: 1.2 },
@@ -59,50 +64,59 @@ const ActivityLogs = () => {
     { field: "device", headerName: "Device", flex: 1 },
   ];
 
-    return (
-        <div className={styles.container}>
-        <div className={styles.card}>
-          <h2 className={styles.title}>Activity Logs</h2>
-  
-          <div style={{  height: 610,
-    width: "100%",
-    overflowX: "auto"}}>
+  return (
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <h2 className={styles.title}>Activity Logs</h2>
+
+        <div
+          style={{
+            height: 610,
+            width: "100%",
+            overflowX: "auto",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          {loading ? ( // ✅ show spinner while loading
+            <div className={styles.loader}>Loading...</div>
+          ) : (
             <DataGrid
               rows={rows}
               columns={columns}
-              pageSizeOptions={[10,20,50]}
+              pageSizeOptions={[10, 20, 50]}
               initialState={{
                 pagination: {
                   paginationModel: { pageSize: 20, page: 0 },
                 },
               }}
-
-  disableRowSelectionOnClick
-  disableColumnMenu
-  disableDensitySelector
-  disableSelectionOnClick
-  showToolbar
+              disableRowSelectionOnClick
+              disableColumnMenu
+              disableDensitySelector
+              disableSelectionOnClick
+              showToolbar
               className={styles.dataGrid}
               sx={{
                 backgroundColor: "#fff",
                 minWidth: 700,
                 fontSize: 17,
-            
                 "& .MuiDataGrid-cell:focus": {
                   outline: "none",
                 },
                 "& .MuiDataGrid-cell:focus-within": {
                   outline: "none",
                 },
-                
                 "& .MuiDataGrid-columnHeader:focus": {
                   outline: "none",
                 },
               }}
             />
-          </div>
+          )}
         </div>
       </div>
-    )
-}
+    </div>
+  );
+};
+
 export default ActivityLogs;
