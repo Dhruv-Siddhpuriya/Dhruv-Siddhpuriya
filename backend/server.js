@@ -2,6 +2,7 @@ require("dotenv").config();
 const swaggerUI = require("swagger-ui-express");
 const swaggerJsDoc = require("swagger-jsdoc");
 const express = require('express');
+
 const mongoose = require('mongoose');
 const DeviceDetector = require("device-detector-js");
 const jwt = require("jsonwebtoken");

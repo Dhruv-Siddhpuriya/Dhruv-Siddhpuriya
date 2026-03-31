@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const client = require("../utils/redisClient");
 const Device = require("../models/Device");
 const crypto = require("crypto");
 const mongoose = require("mongoose");

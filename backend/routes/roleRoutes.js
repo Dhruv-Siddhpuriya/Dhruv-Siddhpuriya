@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const client = require("../utils/redisClient");
 const Role = require('../models/Roles');
 /**
  * @swagger
