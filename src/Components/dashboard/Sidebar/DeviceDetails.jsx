@@ -72,7 +72,7 @@ const ITEMS_PER_PAGE = 5;
             }
           );
       setUsage(res.data.formattedTime);
-    } catch (err) {
+    }   catch (err) {
       console.error(err);
     }
   };
@@ -205,19 +205,21 @@ disabled={startIndex + ITEMS_PER_PAGE >= chartData.length}
   activityLogs.map((log, index) => (
     <div key={index} className={styles.logItem}>
       <span>
-        {new Date(log.startTime).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true
-        })}
+      {new Date(log.startTime).toLocaleTimeString([], {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true,
+  timeZone: "Asia/Kolkata"
+})}
       </span>
       {" → "}
       <span>
-        {new Date(log.endTime).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true
-        })}
+      {new Date(log.endTime).toLocaleTimeString([], {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true,
+  timeZone: "Asia/Kolkata"
+})}
       </span>
     </div>
   ))

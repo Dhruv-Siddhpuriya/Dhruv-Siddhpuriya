@@ -450,45 +450,45 @@ try {
 *                     format: date-time
 */
 router.get("/:id/activity-logs", async (req, res) => {
-try {
-  const { date } = req.query;
+  try {
+    const { date } = req.query;
 
-  const device = await Device.findById(req.params.id);
+    const device = await Device.findById(req.params.id);
+    if (!device) return res.status(404).json({ message: "Device not found" });
 
-  if (!device) {
-    return res.status(404).json({ message: "Device not found" });
+    const dayStart = new Date(`${date}T00:00:00+05:30`);
+    const dayEnd   = new Date(`${date}T23:59:59+05:30`);
+
+    // DEBUG - remove after fix confirmed
+    console.log("date query:", date);
+    console.log("dayStart:", dayStart);
+    console.log("dayEnd:", dayEnd);
+    console.log("first log startTime:", device.activityLogs[0]?.startTime);
+
+    const logs = [];
+
+    device.activityLogs.forEach(log => {
+      if (!log.endTime) return;
+
+      const start = new Date(log.startTime);
+      const end   = new Date(log.endTime);
+
+      const overlapStart = start > dayStart ? start : dayStart;
+      const overlapEnd   = end < dayEnd     ? end   : dayEnd;
+
+      if (overlapStart < overlapEnd) {
+        logs.push({
+          startTime: overlapStart,
+          endTime:   overlapEnd
+        });
+      }
+    });
+
+    res.json(logs);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json(err);
   }
-
-  let dayStart = new Date(date);
-  dayStart.setHours(0, 0, 0, 0);
-
-  let dayEnd = new Date(date);
-  dayEnd.setHours(23, 59, 59, 999);
-
-  const logs = [];
-
-  device.activityLogs.forEach(log => {
-    if (!log.endTime) return;
-  
-    let start = new Date(log.startTime);
-    let end = new Date(log.endTime);
-  
-    // check overlap
-    const overlapStart = start > dayStart ? start : dayStart;
-    const overlapEnd = end < dayEnd ? end : dayEnd;
-  
-    if (overlapStart < overlapEnd) {
-      logs.push({
-        startTime: toIST(overlapStart),
-        endTime: toIST(overlapEnd)
-      });
-    }
-  });
-
-  res.json(logs);
-
-} catch (err) {
-  res.status(500).json(err);
-}
 });
 module.exports = router;
