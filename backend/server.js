@@ -2,6 +2,7 @@ require("dotenv").config();
 const swaggerUI = require("swagger-ui-express");
 const swaggerJsDoc = require("swagger-jsdoc");
 const express = require('express');
+const client = require("./utils/redisClient");
 const mongoose = require('mongoose');
 const DeviceDetector = require("device-detector-js");
 const jwt = require("jsonwebtoken");
@@ -52,46 +53,38 @@ const specs = swaggerJsDoc(options);
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(specs));
 app.get("/api/device-info/:deviceId", async (req, res) => {
   try {
+    const cacheKey = `device:${req.params.deviceId}`;
+
+    const cached = await client.get(cacheKey);
+    if (cached) {
+      console.log("⚡ Device from Redis");
+      return res.json(JSON.parse(cached));
+    }
+
     const device = await Device.findOne({ deviceId: req.params.deviceId })
-      .select("deviceId deviceName isActive images userId")
-      .populate("userId", "firstName lastName email phone country state city lat lng")
+      .populate("userId")
       .lean();
 
     if (!device) {
       return res.status(404).json({ message: "Device not found" });
     }
 
-    const user = device.userId;
-
-    const imageUrls = device.images.map(img =>
-      `${req.protocol}://${req.get("host")}/uploads/${img}`
-    );
-
-    res.json({
+    const response = {
       deviceId: device.deviceId,
       deviceName: device.deviceName,
-      location: {
-        country: user?.country || null,
-        state: user?.state || null,
-        city: user?.city || null,
-        lat: user?.lat || null,
-        lng: user?.lng || null
-      },
-      status: device.isActive ? "Active" : "Inactive",
-      user: {
-        id: user?._id,
-        firstName: user?.firstName,
-        lastName: user?.lastName,
-        email: user?.email,
-        phone: user?.phone
-      },
-      images: imageUrls
-    });
+      status: device.isActive ? "Active" : "Inactive"
+    };
+
+    await client.setEx(cacheKey, 300, JSON.stringify(response));
+
+    console.log("🐢 Device from DB");
+
+    res.json(response);
 
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-}); 
+});
 app.get("/api/device-activeStatus/:id", async (req, res) => {
   try {
     const device = await Device.findById(req.params.id)
@@ -160,34 +153,48 @@ app.get("/api/charts/version", (req,res) => {
  */
 // api for pie chart and bar chart
 app.get("/api/charts/country", async (req, res) => {
-  const { startDate, endDate } = req.query;
+  try {
+    const { startDate, endDate } = req.query;
 
-  let matchStage = {};
+    const cacheKey = `charts:country:${startDate || "all"}:${endDate || "all"}`;
 
-  if (startDate && endDate) {
-    matchStage.createdAt = {
-      $gte: new Date(startDate),
-      $lte: new Date(endDate),
-    };
-  }
-
-  const data = await User.aggregate([
-    { $match: matchStage },
-    {
-      $group: {
-        _id: "$country",
-        count: { $sum: 1 }
-      }
-    },
-    {
-      $sort: {
-        count: -1,
-        _id: 1
-      }
+    // ✅ CHECK CACHE
+    const cached = await client.get(cacheKey);
+    if (cached) {
+      console.log("⚡ Country chart from Redis");
+      return res.json(JSON.parse(cached));
     }
-  ]).allowDiskUse(true);
 
-  res.json(data);
+    let matchStage = {};
+
+    if (startDate && endDate) {
+      matchStage.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
+
+    const data = await User.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: "$country",
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1, _id: 1 } }
+    ]);
+
+    // ✅ STORE CACHE (5 min)
+    await client.setEx(cacheKey, 300, JSON.stringify(data));
+
+    console.log("🐢 Country chart from DB");
+
+    res.json(data);
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 
@@ -263,7 +270,7 @@ app.post("/login", async (req, res) => {
       },
       sessionId: session._id
     });
-
+    await client.del("charts:country:all:all");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -331,9 +338,16 @@ app.get("/api/charts/country-activity", async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
-    let matchStage = {
-      loginTime: { $ne: null }
-    };
+    const cacheKey = `charts:activity:${startDate || "all"}:${endDate || "all"}`;
+
+    // ✅ CACHE CHECK
+    const cached = await client.get(cacheKey);
+    if (cached) {
+      console.log("⚡ Activity chart from Redis");
+      return res.json(JSON.parse(cached));
+    }
+
+    let matchStage = { loginTime: { $ne: null } };
 
     if (startDate && endDate) {
       matchStage.loginTime = {
@@ -344,7 +358,6 @@ app.get("/api/charts/country-activity", async (req, res) => {
 
     const data = await UserSession.aggregate([
       { $match: matchStage },
-
       {
         $lookup: {
           from: "users",
@@ -354,7 +367,6 @@ app.get("/api/charts/country-activity", async (req, res) => {
         }
       },
       { $unwind: "$user" },
-
       {
         $project: {
           userId: 1,
@@ -367,7 +379,6 @@ app.get("/api/charts/country-activity", async (req, res) => {
           }
         }
       },
-
       {
         $group: {
           _id: {
@@ -377,7 +388,6 @@ app.get("/api/charts/country-activity", async (req, res) => {
           }
         }
       },
-
       {
         $group: {
           _id: {
@@ -387,7 +397,6 @@ app.get("/api/charts/country-activity", async (req, res) => {
           activeUsers: { $sum: 1 }
         }
       },
-
       {
         $project: {
           _id: 0,
@@ -396,11 +405,16 @@ app.get("/api/charts/country-activity", async (req, res) => {
           activeUsers: 1
         }
       },
-
       { $sort: { date: 1 } }
     ]);
 
+    // ✅ SAVE CACHE
+    await client.setEx(cacheKey, 300, JSON.stringify(data));
+
+    console.log("🐢 Activity chart from DB");
+
     res.json(data);
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -488,89 +502,169 @@ app.get("/api/charts/state-wise", async (req, res) => {
  *         description: User registered successfully
  */ 
 //Register Page API
-app.post("/register",upload.single("profileImage"), async (req, res) => {
+app.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
-        const { firstName, lastName, email, phone,country, password,lat, lng} = req.body;
-        let location = { city: null, state: null, country: null };
-        const imagePath = req.file ? req.file.filename : "";
-        const strongPasswordRegex =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      country,
+      password,
+      lat,
+      lng
+    } = req.body;
 
-if (!strongPasswordRegex.test(password)) {
-  return res.status(400).json({
-    message: "Password is not strong enough",
-  });
-}
-    // 2️⃣ If GPS exists → Reverse Geocode
-    if (lat && lng) {
-      location = await reverseGeocodeOSM(lat, lng);
-    } 
-    // 3️⃣ If GPS NOT available → Use IP
-    else {
-      const clientIp = GetClientip(req);
-      const finalIp =
-        clientIp === "::1" || clientIp.startsWith("192.168")
-          ? "8.8.8.8" // fallback for localhost/LAN
-          : clientIp;
+    let location = { city: null, state: null, country: null };
 
-      const geoRes = await axios.get(`http://ip-api.com/json/${finalIp}`, {
-        timeout: 5000,
+    const imagePath = req.file ? req.file.filename : "";
+
+    // 🔐 Password validation
+    const strongPasswordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+
+    if (!strongPasswordRegex.test(password)) {
+      return res.status(400).json({
+        message: "Password is not strong enough",
       });
-
-      location = {
-        city: geoRes.data.city || null,
-        state: geoRes.data.regionName || null,
-        country: geoRes.data.country || country || null,
-      };
     }
 
-        const existingUser = await User.findOne({ email });
-          if (existingUser) 
-          {
-            return res.status(400).json({ message: "Email already registered" });
-          }
-          const existingPhone = await User.findOne({phone});
-          if(existingPhone){
-            return res.status(400).json({message : "Phone Number Already exsits"})
-          }
-           
-            const hashedPassword = await bcrypt.hash(password, 10);
-            const user = new User({
-              firstName,
-              lastName,
-              email,
-              phone,
-              country,
-              lat: lat || null,
-              lng: lng || null,
-              city: location.city,
-              state: location.state,
-              password: hashedPassword,
-              profileImage: imagePath  
-            });
-            
-            await user.save();
-            ChartVersion = Date.now();
-             res.status(201).json({ message: "User registered successfully" });
-      } 
-      catch (error) {
-        console.error("Register Error:", error);
-      
-        // If it's a Mongoose validation error
-        if (error.name === "ValidationError") {
-          const messages = Object.values(error.errors).map(e => e.message);
-          return res.status(400).json({ message: messages.join(", ") });
+    // =========================================
+    // ✅ FIX LAT/LNG (IMPORTANT)
+    // =========================================
+    const latitude =
+      lat && lat !== "null" && lat !== "" ? parseFloat(lat) : null;
+
+    const longitude =
+      lng && lng !== "null" && lng !== "" ? parseFloat(lng) : null;
+
+    // =========================================
+    // 📍 GPS BASED LOCATION
+    // =========================================
+    if (
+      latitude !== null &&
+      longitude !== null &&
+      !isNaN(latitude) &&
+      !isNaN(longitude)
+    ) {
+      location = await reverseGeocodeOSM(latitude, longitude);
+    }
+
+    // =========================================
+    // 🌐 IP BASED LOCATION (FALLBACK)
+    // =========================================
+    else {
+      const clientIp = GetClientip(req);
+
+      const isLocal =
+        clientIp === "::1" ||
+        clientIp === "127.0.0.1" ||
+        clientIp.startsWith("192.168");
+
+      if (isLocal) {
+        location = {
+          city: "Local User",
+          state: "Local State",
+          country: country || "India",
+        };
+      } else {
+        try {
+          const geoRes = await axios.get(
+            `http://ip-api.com/json/${clientIp}`,
+            { timeout: 5000 }
+          );
+
+          location = {
+            city: geoRes.data.city || null,
+            state: geoRes.data.regionName || null,
+            country: geoRes.data.country || country || null,
+          };
+        } catch (err) {
+          console.error("IP Geolocation Error:", err);
         }
-      
-        // If it's a duplicate key error
-        if (error.code === 11000) {
-          const field = Object.keys(error.keyPattern)[0];
-          return res.status(400).json({ message: `${field} already exists` });
-        }
-      
-        res.status(500).json({ message: error.message });
       }
-  });
+    }
+
+    // =========================================
+    // 🧠 FINAL FALLBACK (VERY IMPORTANT)
+    // =========================================
+    if (!location.city) {
+      location.city = location.state || "Unknown City";
+    }
+
+    if (!location.state) {
+      location.state = "Unknown State";
+    }
+
+    if (!location.country) {
+      location.country = country || "Unknown Country";
+    }
+
+    // =========================================
+    // 🔍 CHECK EXISTING USER
+    // =========================================
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    const existingPhone = await User.findOne({ phone });
+    if (existingPhone) {
+      return res.status(400).json({ message: "Phone Number already exists" });
+    }
+
+    // =========================================
+    // 🔐 HASH PASSWORD
+    // =========================================
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // =========================================
+    // 👤 CREATE USER
+    // =========================================
+    const user = new User({
+      firstName,
+      lastName,
+      email,
+      phone,
+      country: location.country,
+      lat: latitude,
+      lng: longitude,
+      city: location.city,
+      state: location.state,
+      password: hashedPassword,
+      profileImage: imagePath,
+    });
+
+    await user.save();
+
+    // =========================================
+    // 🧹 CLEAR CACHE
+    // =========================================
+    await client.del("charts:country:all:all");
+
+    ChartVersion = Date.now();
+
+    res.status(201).json({
+      message: "User registered successfully",
+      location
+    });
+
+  } catch (error) {
+    console.error("Register Error:", error);
+
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ message: messages.join(", ") });
+    }
+
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ message: `${field} already exists` });
+    }
+
+    res.status(500).json({ message: error.message });
+  }
+});
   /**
  * @swagger
  * /api/users-locations:

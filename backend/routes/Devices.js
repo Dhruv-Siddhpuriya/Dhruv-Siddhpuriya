@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const Device = require("../models/Device");
 const crypto = require("crypto");
+const client = require("../utils/redisClient");
 const mongoose = require("mongoose");
 const checkPermission = require("../middleware/checkPermission");
 const upload = require("../utils/upload");   // path to your upload.js
@@ -67,7 +68,7 @@ router.post("/", checkPermission("add"), upload.array("images", 10), async (req,
     });
 
     res.json(device);
-
+    await client.del(`devices:user:${req.body.userId}`);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -91,9 +92,23 @@ router.post("/", checkPermission("add"), upload.array("images", 10), async (req,
 /* 📥 GET USER DEVICES */
 router.get("/user/:userId", async (req, res) => {
   try {
+    const cacheKey = `devices:user:${req.params.userId}`;
+
+    // ✅ CHECK CACHE
+    const cached = await client.get(cacheKey);
+    if (cached) {
+      console.log("⚡ Devices from Redis");
+      return res.json(JSON.parse(cached));
+    }
+
     const devices = await Device.find({ userId: req.params.userId })
       .select("deviceId deviceName isActive images")
       .lean();
+
+    // ✅ STORE CACHE
+    await client.setEx(cacheKey, 300, JSON.stringify(devices));
+
+    console.log("🐢 Devices from DB");
 
     res.json(devices);
   } catch (err) {
@@ -158,7 +173,8 @@ router.patch("/:id", async (req, res) => {
     }
 
     res.json(device);
-
+    await client.del(`device:${device.deviceId}`);
+    await client.del(`devices:user:${device.userId}`);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -189,6 +205,8 @@ router.delete("/:id",checkPermission("delete"), async (req, res) => {
     }
 
     res.json({ message: "Device deleted successfully" });
+    await client.del(`devices:user:${deletedDevice.userId}`);
+await client.del(`device:${deletedDevice.deviceId}`);
   } catch (err) {
     res.status(500).json(err);
   }
@@ -211,9 +229,21 @@ router.delete("/:id",checkPermission("delete"), async (req, res) => {
  */
 router.get("/device/:deviceId", async (req, res) => {
   try {
+    const cacheKey = `device:${req.params.deviceId}`;
+
+    const cached = await client.get(cacheKey);
+    if (cached) {
+      console.log("⚡ Device from Redis");
+      return res.json(JSON.parse(cached));
+    }
+
     const device = await Device.findOne({ deviceId: req.params.deviceId })
       .select("deviceId deviceName isActive userId images")
       .lean();
+
+    await client.setEx(cacheKey, 300, JSON.stringify(device));
+
+    console.log("🐢 Device from DB");
 
     res.json(device);
   } catch (err) {
@@ -256,54 +286,63 @@ router.get("/device/:deviceId", async (req, res) => {
 *                   example: "5 hr 15 min"
 */
 router.get("/:id/usage", async (req, res) => {
-try {
-  const { date } = req.query;
+  try {
+    const { date } = req.query;
 
-  const device = await Device.findById(req.params.id);
+    const cacheKey = `device:usage:${req.params.id}:${date || "all"}`;
 
-  let totalMs = 0;
+    const cached = await client.get(cacheKey);
+    if (cached) {
+      console.log("⚡ Usage from Redis");
+      return res.json(JSON.parse(cached));
+    }
 
-  // If date filter applied
-  let dayStart, dayEnd;
+    const device = await Device.findById(req.params.id);
 
-  if (date) {
-    dayStart = new Date(`${date}T00:00:00+05:30`);
-    dayEnd   = new Date(`${date}T23:59:59+05:30`);
+    let totalMs = 0;
+
+    let dayStart, dayEnd;
+
+    if (date) {
+      dayStart = new Date(`${date}T00:00:00+05:30`);
+      dayEnd   = new Date(`${date}T23:59:59+05:30`);
+    }
+
+    device.activityLogs.forEach(log => {
+      let start = new Date(log.startTime);
+      let end = log.endTime ? new Date(log.endTime) : new Date();
+
+      if (!date) {
+        totalMs += end - start;
+        return;
+      }
+
+      const overlapStart = start > dayStart ? start : dayStart;
+      const overlapEnd = end < dayEnd ? end : dayEnd;
+
+      if (overlapStart < overlapEnd) {
+        totalMs += overlapEnd - overlapStart;
+      }
+    });
+
+    const totalSeconds = Math.floor(totalMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+    const response = {
+      totalHours: (totalMs / (1000 * 60 * 60)).toFixed(2),
+      formattedTime: `${hours} hr ${minutes} min`
+    };
+
+    await client.setEx(cacheKey, 300, JSON.stringify(response));
+
+    console.log("🐢 Usage from DB");
+
+    res.json(response);
+
+  } catch (err) {
+    res.status(500).json(err);
   }
-
-  device.activityLogs.forEach(log => {
-    let start = new Date(log.startTime);
-    let end = log.endTime ? new Date(log.endTime) : new Date();
-
-    // ✅ If no date filter → normal calculation
-    if (!date) {
-      totalMs += end - start;
-      return;
-    }
-
-    // ✅ Find overlap
-    const overlapStart = start > dayStart ? start : dayStart;
-    const overlapEnd = end < dayEnd ? end : dayEnd;
-
-    // ✅ Only add if overlap exists
-    if (overlapStart < overlapEnd) {
-      totalMs += overlapEnd - overlapStart;
-    }
-  });
-
-  // Convert milliseconds
-  const totalSeconds = Math.floor(totalMs / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-
-  res.json({
-    totalHours: (totalMs / (1000 * 60 * 60)).toFixed(2),
-    formattedTime: `${hours} hr ${minutes} min`
-  });
-
-} catch (err) {
-  res.status(500).json(err);
-}
 });
 
 //Device Usage chart
@@ -341,71 +380,78 @@ try {
 *                     example: "4 hr 30 min"
 */
 router.get("/:id/usage-history", async (req, res) => {
-try {
-  const device = await Device.findById(req.params.id);
+  try {
+    const cacheKey = `device:history:${req.params.id}`;
 
-  if (!device) {
-    return res.status(404).json({ message: "Device not found" });
-  }
-
-  const dailyUsage = {};
-
-  device.activityLogs.forEach(log => {
-    let start = new Date(log.startTime);
-    let end = log.endTime ? new Date(log.endTime) : new Date();
-  
-    while (start < end) {
-      let dayStart = new Date(start);
-      dayStart.setHours(0, 0, 0, 0);
-  
-      let dayEnd = new Date(start);
-      dayEnd.setHours(23, 59, 59, 999);
-  
-      const overlapStart = start > dayStart ? start : dayStart;
-      const overlapEnd = end < dayEnd ? end : dayEnd;
-  
-      if (overlapStart < overlapEnd) {
-        // ✅ Use IST
-        const dateKey = toIST(dayStart).toISOString().split("T")[0];
-  
-        if (!dailyUsage[dateKey]) dailyUsage[dateKey] = 0;
-  
-        dailyUsage[dateKey] += overlapEnd - overlapStart;
-      }
-  
-      start = new Date(dayStart);
-      start.setDate(start.getDate() + 1);
+    const cached = await client.get(cacheKey);
+    if (cached) {
+      console.log("⚡ History from Redis");
+      return res.json(JSON.parse(cached));
     }
-  });
 
-  // Convert to array
-  const result = Object.keys(dailyUsage).map(date => {
-    const totalSeconds = Math.floor(dailyUsage[date] / 1000);
-  
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-  
-    return {
-      date,
-    
-      // ✅ CORRECT for chart (decimal)
-      hours: +(dailyUsage[date] / (1000 * 60 * 60)).toFixed(2),
-    
-      // ✅ CORRECT for UI
-      label: `${hours} hr ${minutes} min`
-    };
-  });
+    const device = await Device.findById(req.params.id);
 
-  // Sort by date
-  result.sort((a, b) => new Date(a.date) - new Date(b.date));
-  const today = new Date().toLocaleDateString("en-CA");
+    if (!device) {
+      return res.status(404).json({ message: "Device not found" });
+    }
 
-  const filteredResult = result.filter(item => item.date !== today);
-  
-  res.json(filteredResult);
-} catch (err) {
-  res.status(500).json(err);
-}
+    const dailyUsage = {};
+
+    device.activityLogs.forEach(log => {
+      let start = new Date(log.startTime);
+      let end = log.endTime ? new Date(log.endTime) : new Date();
+
+      while (start < end) {
+        let dayStart = new Date(start);
+        dayStart.setHours(0, 0, 0, 0);
+
+        let dayEnd = new Date(start);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        const overlapStart = start > dayStart ? start : dayStart;
+        const overlapEnd = end < dayEnd ? end : dayEnd;
+
+        if (overlapStart < overlapEnd) {
+          const dateKey = toIST(dayStart).toISOString().split("T")[0];
+
+          if (!dailyUsage[dateKey]) dailyUsage[dateKey] = 0;
+
+          dailyUsage[dateKey] += overlapEnd - overlapStart;
+        }
+
+        start = new Date(dayStart);
+        start.setDate(start.getDate() + 1);
+      }
+    });
+
+    const result = Object.keys(dailyUsage).map(date => {
+      const totalSeconds = Math.floor(dailyUsage[date] / 1000);
+
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+      return {
+        date,
+        hours: +(dailyUsage[date] / (1000 * 60 * 60)).toFixed(2),
+        label: `${hours} hr ${minutes} min`
+      };
+    });
+
+    result.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const today = new Date().toLocaleDateString("en-CA");
+    const filteredResult = result.filter(item => item.date !== today);
+
+    // ✅ STORE CACHE
+    await client.setEx(cacheKey, 300, JSON.stringify(filteredResult));
+
+    console.log("🐢 History from DB");
+
+    res.json(filteredResult);
+
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
 
 // 📅 GET ACTIVATION LOGS FOR A DAY
