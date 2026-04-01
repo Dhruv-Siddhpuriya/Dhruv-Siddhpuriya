@@ -270,7 +270,7 @@ app.post("/login", async (req, res) => {
       },
       sessionId: session._id
     });
-    await client.del("charts:country:all:all");
+await client.del("charts:country:all:all");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -502,169 +502,89 @@ app.get("/api/charts/state-wise", async (req, res) => {
  *         description: User registered successfully
  */ 
 //Register Page API
-app.post("/register", upload.single("profileImage"), async (req, res) => {
+app.post("/register",upload.single("profileImage"), async (req, res) => {
   try {
-    const {
-      firstName,
-      lastName,
-      email,
-      phone,
-      country,
-      password,
-      lat,
-      lng
-    } = req.body;
+        const { firstName, lastName, email, phone,country, password,lat, lng} = req.body;
+        let location = { city: null, state: null, country: null };
+        const imagePath = req.file ? req.file.filename : "";
+        const strongPasswordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
-    let location = { city: null, state: null, country: null };
-
-    const imagePath = req.file ? req.file.filename : "";
-
-    // 🔐 Password validation
-    const strongPasswordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
-
-    if (!strongPasswordRegex.test(password)) {
-      return res.status(400).json({
-        message: "Password is not strong enough",
-      });
-    }
-
-    // =========================================
-    // ✅ FIX LAT/LNG (IMPORTANT)
-    // =========================================
-    const latitude =
-      lat && lat !== "null" && lat !== "" ? parseFloat(lat) : null;
-
-    const longitude =
-      lng && lng !== "null" && lng !== "" ? parseFloat(lng) : null;
-
-    // =========================================
-    // 📍 GPS BASED LOCATION
-    // =========================================
-    if (
-      latitude !== null &&
-      longitude !== null &&
-      !isNaN(latitude) &&
-      !isNaN(longitude)
-    ) {
-      location = await reverseGeocodeOSM(latitude, longitude);
-    }
-
-    // =========================================
-    // 🌐 IP BASED LOCATION (FALLBACK)
-    // =========================================
+if (!strongPasswordRegex.test(password)) {
+  return res.status(400).json({
+    message: "Password is not strong enough",
+  });
+}
+    // 2️⃣ If GPS exists → Reverse Geocode
+    if (lat && lng) {
+      location = await reverseGeocodeOSM(lat, lng);
+    } 
+    // 3️⃣ If GPS NOT available → Use IP
     else {
       const clientIp = GetClientip(req);
+      const finalIp =
+        clientIp === "::1" || clientIp.startsWith("192.168")
+          ? "8.8.8.8" // fallback for localhost/LAN
+          : clientIp;
 
-      const isLocal =
-        clientIp === "::1" ||
-        clientIp === "127.0.0.1" ||
-        clientIp.startsWith("192.168");
+      const geoRes = await axios.get(`http://ip-api.com/json/${finalIp}`, {
+        timeout: 5000,
+      });
 
-      if (isLocal) {
-        location = {
-          city: "Local User",
-          state: "Local State",
-          country: country || "India",
-        };
-      } else {
-        try {
-          const geoRes = await axios.get(
-            `http://ip-api.com/json/${clientIp}`,
-            { timeout: 5000 }
-          );
+      location = {
+        city: geoRes.data.city || null,
+        state: geoRes.data.regionName || null,
+        country: geoRes.data.country || country || null,
+      };
+    }
 
-          location = {
-            city: geoRes.data.city || null,
-            state: geoRes.data.regionName || null,
-            country: geoRes.data.country || country || null,
-          };
-        } catch (err) {
-          console.error("IP Geolocation Error:", err);
+        const existingUser = await User.findOne({ email });
+          if (existingUser) 
+          {
+            return res.status(400).json({ message: "Email already registered" });
+          }
+          const existingPhone = await User.findOne({phone});
+          if(existingPhone){
+            return res.status(400).json({message : "Phone Number Already exsits"})
+          }
+           
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const user = new User({
+              firstName,
+              lastName,
+              email,
+              phone,
+              country,
+              lat: lat || null,
+              lng: lng || null,
+              city: location.city,
+              state: location.state,
+              password: hashedPassword,
+              profileImage: imagePath  
+            });
+            
+            await user.save();
+            ChartVersion = Date.now();
+             res.status(201).json({ message: "User registered successfully" });
+      } 
+      catch (error) {
+        console.error("Register Error:", error);
+      
+        // If it's a Mongoose validation error
+        if (error.name === "ValidationError") {
+          const messages = Object.values(error.errors).map(e => e.message);
+          return res.status(400).json({ message: messages.join(", ") });
         }
+      
+        // If it's a duplicate key error
+        if (error.code === 11000) {
+          const field = Object.keys(error.keyPattern)[0];
+          return res.status(400).json({ message: `${field} already exists` });
+        }
+      
+        res.status(500).json({ message: error.message });
       }
-    }
-
-    // =========================================
-    // 🧠 FINAL FALLBACK (VERY IMPORTANT)
-    // =========================================
-    if (!location.city) {
-      location.city = location.state || "Unknown City";
-    }
-
-    if (!location.state) {
-      location.state = "Unknown State";
-    }
-
-    if (!location.country) {
-      location.country = country || "Unknown Country";
-    }
-
-    // =========================================
-    // 🔍 CHECK EXISTING USER
-    // =========================================
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "Email already registered" });
-    }
-
-    const existingPhone = await User.findOne({ phone });
-    if (existingPhone) {
-      return res.status(400).json({ message: "Phone Number already exists" });
-    }
-
-    // =========================================
-    // 🔐 HASH PASSWORD
-    // =========================================
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // =========================================
-    // 👤 CREATE USER
-    // =========================================
-    const user = new User({
-      firstName,
-      lastName,
-      email,
-      phone,
-      country: location.country,
-      lat: latitude,
-      lng: longitude,
-      city: location.city,
-      state: location.state,
-      password: hashedPassword,
-      profileImage: imagePath,
-    });
-
-    await user.save();
-
-    // =========================================
-    // 🧹 CLEAR CACHE
-    // =========================================
-    await client.del("charts:country:all:all");
-
-    ChartVersion = Date.now();
-
-    res.status(201).json({
-      message: "User registered successfully",
-      location
-    });
-
-  } catch (error) {
-    console.error("Register Error:", error);
-
-    if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map(e => e.message);
-      return res.status(400).json({ message: messages.join(", ") });
-    }
-
-    if (error.code === 11000) {
-      const field = Object.keys(error.keyPattern)[0];
-      return res.status(400).json({ message: `${field} already exists` });
-    }
-
-    res.status(500).json({ message: error.message });
-  }
-});
+  });
   /**
  * @swagger
  * /api/users-locations:
