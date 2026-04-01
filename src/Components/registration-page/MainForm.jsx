@@ -95,8 +95,10 @@ function MainForm() {
         });
     
         // 3️⃣ Append location
-        formDataToSend.append("lat", location.lat);
-        formDataToSend.append("lng", location.lng);
+        if (location.lat && location.lng) {
+          formDataToSend.append("lat", location.lat);
+          formDataToSend.append("lng", location.lng);
+        }
     
         // 4️⃣ Append image (important)
         if (image) {

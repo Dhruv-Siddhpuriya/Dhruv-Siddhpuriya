@@ -504,7 +504,15 @@ app.get("/api/charts/state-wise", async (req, res) => {
 //Register Page API
 app.post("/register",upload.single("profileImage"), async (req, res) => {
   try {
-        const { firstName, lastName, email, phone,country, password,lat, lng} = req.body;
+    const { firstName, lastName, email, phone, country, password } = req.body;
+
+    // 🔥 FIX lat/lng here
+    let lat = req.body.lat;
+    let lng = req.body.lng;
+    
+    // convert safely
+    lat = lat && lat !== "null" ? Number(lat) : null;
+    lng = lng && lng !== "null" ? Number(lng) : null;
         let location = { city: null, state: null, country: null };
         const imagePath = req.file ? req.file.filename : "";
         const strongPasswordRegex =
