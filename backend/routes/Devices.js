@@ -267,11 +267,8 @@ try {
   let dayStart, dayEnd;
 
   if (date) {
-    dayStart = new Date(date);
-    dayStart.setHours(0, 0, 0, 0);
-
-    dayEnd = new Date(date);
-    dayEnd.setHours(23, 59, 59, 999);
+    dayStart = new Date(`${date}T00:00:00+05:30`);
+    dayEnd   = new Date(`${date}T23:59:59+05:30`);
   }
 
   device.activityLogs.forEach(log => {
