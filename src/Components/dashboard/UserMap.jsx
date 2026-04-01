@@ -1,35 +1,54 @@
-  import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-  import "leaflet/dist/leaflet.css";
-  import L from "leaflet";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
-  // Fix Leaflet marker paths
-  delete L.Icon.Default.prototype._getIconUrl;
+// 🔴 current user icon
+const redIcon = new L.Icon({
+  iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+  iconSize: [32, 32],
+});
 
-  L.Icon.Default.mergeOptions({
-    iconUrl: "/images/marker-icon.png",    // path in public folder
-    shadowUrl: "/images/marker-shadow.png" // path in public folder
-  });
+// 🔵 other users
+const blueIcon = new L.Icon({
+  iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+  iconSize: [32, 32],
+});
 
-  const UserMap = ({ users }) => {
-    return (
-      <div style={{ width: "90%", maxWidth: "1500px", border:"2px solid black", margin:"0 auto"}}>
-        <div style={{ height: "600px", width: "100%" }}>
-          <MapContainer center={[20, 0]} zoom={2} style={{ height: "100%", width: "100%" }}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
-            {users
-  .filter(u => u.lat && u.lng)
-  .map((u, i) => (
-              <Marker key={i} position={[u.lat, u.lng]}>
-                <Popup>
-                  <strong>{u.city}</strong><br />
-                  {u.state}, {u.country}
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        </div>
+const UserMap = ({ users }) => {
+  // ✅ get logged-in user
+  const currentUser = JSON.parse(sessionStorage.getItem("user"));
+
+  return (
+    <div style={{ width: "90%", maxWidth: "1500px", margin: "0 auto" }}>
+      <div style={{ height: "600px", width: "100%" }}>
+        <MapContainer center={[20, 0]} zoom={2} style={{ height: "100%", width: "100%" }}>
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
+
+          {users
+            .filter(u => u.lat && u.lng) // ✅ avoid crash
+            .map((u, i) => {
+              
+              // 🔥 FIX HERE (id vs _id)
+              const isMe = currentUser?.id === u._id;
+
+              return (
+                <Marker
+                  key={i}
+                  position={[u.lat, u.lng]}
+                  icon={isMe ? redIcon : blueIcon}
+                >
+                  <Popup>
+                    <strong>{u.city}</strong><br />
+                    {u.state}, {u.country}
+                    {isMe && <div>📍 You are here</div>}
+                  </Popup>
+                </Marker>
+              );
+            })}
+        </MapContainer>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
-  export default UserMap;
+export default UserMap;
