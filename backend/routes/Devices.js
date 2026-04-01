@@ -233,7 +233,7 @@ router.get("/device/:deviceId", async (req, res) => {
 
     const cached = await client.get(cacheKey);
     if (cached) {
-      console.log("⚡ Device from Redis");
+     console.log("⚡ Device from Redis");
       return res.json(JSON.parse(cached));
     }
 
