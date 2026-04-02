@@ -289,13 +289,7 @@ router.get("/:id/usage", async (req, res) => {
   try {
     const { date } = req.query;
 
-    const cacheKey = `device:usage:${req.params.id}:${date || "all"}`;
-
-    const cached = await client.get(cacheKey);
-    if (cached) {
-      console.log("⚡ Usage from Redis");
-      return res.json(JSON.parse(cached));
-    }
+   
 
     const device = await Device.findById(req.params.id);
 
@@ -334,9 +328,7 @@ router.get("/:id/usage", async (req, res) => {
       formattedTime: `${hours} hr ${minutes} min`
     };
 
-    await client.setEx(cacheKey, 300, JSON.stringify(response));
-
-    console.log("🐢 Usage from DB");
+   
 
     res.json(response);
 
