@@ -71,6 +71,9 @@ router.put("/:id", async (req, res) => {
       { new: true }
     ).select("-password");
 
+    // ✅ CLEAR REDIS CACHE
+    await client.del(`user:${req.params.id}`);
+
     res.json(updatedUser);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -102,21 +105,23 @@ router.put("/:id", async (req, res) => {
  *       200:
  *         description: Profile image uploaded
  */
-router.put("/upload-profile/:id",upload.single("profileImage"),async (req, res) => {
-    try {
-      const imagePath = req.file.filename;
+router.put("/upload-profile/:id", upload.single("profileImage"), async (req, res) => {
+  try {
+    const imagePath = req.file.filename;
 
-      const user = await User.findByIdAndUpdate(
-        req.params.id,
-        { profileImage: imagePath },
-        { new: true }
-      );
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { profileImage: imagePath },
+      { new: true }
+    );
 
-      res.json(user);
-    } catch (err) {
-      res.status(500).json({ message: "Upload failed" });
-    }
+    // ✅ CLEAR CACHE HERE ALSO
+    await client.del(`user:${req.params.id}`);
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Upload failed" });
   }
-);
+});
 
 module.exports = router;
