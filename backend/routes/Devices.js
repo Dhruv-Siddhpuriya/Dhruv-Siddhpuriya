@@ -12,25 +12,6 @@ d.setHours(d.getHours() + 5);
 d.setMinutes(d.getMinutes() + 30);
 return d;
 };
-// ✅ Get IST Date safely
-const getISTDate = (date) => {
-  return new Date(
-    new Date(date).toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-  );
-};
-
-// ✅ Get IST Day Start & End
-const getISTDayBounds = (date) => {
-  const ist = getISTDate(date);
-
-  const start = new Date(ist);
-  start.setHours(0, 0, 0, 0);
-
-  const end = new Date(ist);
-  end.setHours(23, 59, 59, 999);
-
-  return { start, end };
-};
 /* 🔑 Generate alphanumeric device ID */
 const generateDeviceId = () => {
   return "DEV-" + crypto.randomBytes(4).toString("hex").toUpperCase();
@@ -308,29 +289,28 @@ router.get("/:id/usage", async (req, res) => {
   try {
     const { date } = req.query;
 
-    const device = await Device.findById(req.params.id);
+    const cacheKey = `device:usage:${req.params.id}:${date || "all"}`;
 
-    if (!device) {
-      return res.status(404).json({ message: "Device not found" });
+    const cached = await client.get(cacheKey);
+    if (cached) {
+      console.log("⚡ Usage from Redis");
+      return res.json(JSON.parse(cached));
     }
+
+    const device = await Device.findById(req.params.id);
 
     let totalMs = 0;
 
     let dayStart, dayEnd;
 
     if (date) {
-      const bounds = getISTDayBounds(date);
-      dayStart = bounds.start;
-      dayEnd = bounds.end;
+      dayStart = new Date(`${date}T00:00:00+05:30`);
+      dayEnd   = new Date(`${date}T23:59:59+05:30`);
     }
 
     device.activityLogs.forEach(log => {
-      let start = getISTDate(log.startTime);
-
-      // ✅ IST current time fix
-      const nowIST = getISTDate(new Date());
-
-      let end = log.endTime ? getISTDate(log.endTime) : nowIST;
+      let start = new Date(log.startTime);
+      let end = log.endTime ? new Date(log.endTime) : new Date();
 
       if (!date) {
         totalMs += end - start;
@@ -349,10 +329,16 @@ router.get("/:id/usage", async (req, res) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
 
-    res.json({
+    const response = {
       totalHours: (totalMs / (1000 * 60 * 60)).toFixed(2),
       formattedTime: `${hours} hr ${minutes} min`
-    });
+    };
+
+    await client.setEx(cacheKey, 300, JSON.stringify(response));
+
+    console.log("🐢 Usage from DB");
+
+    res.json(response);
 
   } catch (err) {
     res.status(500).json(err);
@@ -395,6 +381,14 @@ router.get("/:id/usage", async (req, res) => {
 */
 router.get("/:id/usage-history", async (req, res) => {
   try {
+    const cacheKey = `device:history:${req.params.id}`;
+
+    const cached = await client.get(cacheKey);
+    if (cached) {
+      console.log("⚡ History from Redis");
+      return res.json(JSON.parse(cached));
+    }
+
     const device = await Device.findById(req.params.id);
 
     if (!device) {
@@ -404,32 +398,27 @@ router.get("/:id/usage-history", async (req, res) => {
     const dailyUsage = {};
 
     device.activityLogs.forEach(log => {
-      let start = getISTDate(log.startTime);
-
-      // ✅ IST current time fix
-      const nowIST = getISTDate(new Date());
-
-      let end = log.endTime ? getISTDate(log.endTime) : nowIST;
+      let start = new Date(log.startTime);
+      let end = log.endTime ? new Date(log.endTime) : new Date();
 
       while (start < end) {
-        const { start: dayStart, end: dayEnd } = getISTDayBounds(start);
+        let dayStart = new Date(start);
+        dayStart.setHours(0, 0, 0, 0);
+
+        let dayEnd = new Date(start);
+        dayEnd.setHours(23, 59, 59, 999);
 
         const overlapStart = start > dayStart ? start : dayStart;
         const overlapEnd = end < dayEnd ? end : dayEnd;
 
         if (overlapStart < overlapEnd) {
-
-          // ✅ Proper IST date key (FIXED)
-          const dateKey = dayStart.toLocaleDateString("en-CA", {
-            timeZone: "Asia/Kolkata"
-          });
+          const dateKey = toIST(dayStart).toISOString().split("T")[0];
 
           if (!dailyUsage[dateKey]) dailyUsage[dateKey] = 0;
 
           dailyUsage[dateKey] += overlapEnd - overlapStart;
         }
 
-        // Move to next day
         start = new Date(dayStart);
         start.setDate(start.getDate() + 1);
       }
@@ -448,15 +437,15 @@ router.get("/:id/usage-history", async (req, res) => {
       };
     });
 
-    // ✅ Sort correctly
     result.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // ✅ Remove today (optional)
-    const today = new Date().toLocaleDateString("en-CA", {
-      timeZone: "Asia/Kolkata"
-    });
-
+    const today = new Date().toLocaleDateString("en-CA");
     const filteredResult = result.filter(item => item.date !== today);
+
+    // ✅ STORE CACHE
+    await client.setEx(cacheKey, 300, JSON.stringify(filteredResult));
+
+    console.log("🐢 History from DB");
 
     res.json(filteredResult);
 
