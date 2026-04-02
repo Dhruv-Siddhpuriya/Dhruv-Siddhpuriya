@@ -12,6 +12,25 @@ d.setHours(d.getHours() + 5);
 d.setMinutes(d.getMinutes() + 30);
 return d;
 };
+// ✅ Get IST Date safely
+const getISTDate = (date) => {
+  return new Date(
+    new Date(date).toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+};
+
+// ✅ Get IST Day Start & End
+const getISTDayBounds = (date) => {
+  const ist = getISTDate(date);
+
+  const start = new Date(ist);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(ist);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
+};
 /* 🔑 Generate alphanumeric device ID */
 const generateDeviceId = () => {
   return "DEV-" + crypto.randomBytes(4).toString("hex").toUpperCase();
@@ -291,18 +310,27 @@ router.get("/:id/usage", async (req, res) => {
 
     const device = await Device.findById(req.params.id);
 
+    if (!device) {
+      return res.status(404).json({ message: "Device not found" });
+    }
+
     let totalMs = 0;
 
     let dayStart, dayEnd;
 
     if (date) {
-      dayStart = new Date(`${date}T00:00:00+05:30`);
-      dayEnd   = new Date(`${date}T23:59:59+05:30`);
+      const bounds = getISTDayBounds(date);
+      dayStart = bounds.start;
+      dayEnd = bounds.end;
     }
 
     device.activityLogs.forEach(log => {
-      let start = new Date(log.startTime);
-      let end = log.endTime ? new Date(log.endTime) : new Date();
+      let start = getISTDate(log.startTime);
+
+      // ✅ IST current time fix
+      const nowIST = getISTDate(new Date());
+
+      let end = log.endTime ? getISTDate(log.endTime) : nowIST;
 
       if (!date) {
         totalMs += end - start;
@@ -376,27 +404,32 @@ router.get("/:id/usage-history", async (req, res) => {
     const dailyUsage = {};
 
     device.activityLogs.forEach(log => {
-      let start = new Date(log.startTime);
-      let end = log.endTime ? new Date(log.endTime) : new Date();
+      let start = getISTDate(log.startTime);
+
+      // ✅ IST current time fix
+      const nowIST = getISTDate(new Date());
+
+      let end = log.endTime ? getISTDate(log.endTime) : nowIST;
 
       while (start < end) {
-        let dayStart = new Date(start);
-        dayStart.setHours(0, 0, 0, 0);
-
-        let dayEnd = new Date(start);
-        dayEnd.setHours(23, 59, 59, 999);
+        const { start: dayStart, end: dayEnd } = getISTDayBounds(start);
 
         const overlapStart = start > dayStart ? start : dayStart;
         const overlapEnd = end < dayEnd ? end : dayEnd;
 
         if (overlapStart < overlapEnd) {
-          const dateKey = toIST(dayStart).toISOString().split("T")[0];
+
+          // ✅ Proper IST date key (FIXED)
+          const dateKey = dayStart.toLocaleDateString("en-CA", {
+            timeZone: "Asia/Kolkata"
+          });
 
           if (!dailyUsage[dateKey]) dailyUsage[dateKey] = 0;
 
           dailyUsage[dateKey] += overlapEnd - overlapStart;
         }
 
+        // Move to next day
         start = new Date(dayStart);
         start.setDate(start.getDate() + 1);
       }
@@ -415,9 +448,14 @@ router.get("/:id/usage-history", async (req, res) => {
       };
     });
 
+    // ✅ Sort correctly
     result.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    const today = new Date().toLocaleDateString("en-CA");
+    // ✅ Remove today (optional)
+    const today = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata"
+    });
+
     const filteredResult = result.filter(item => item.date !== today);
 
     res.json(filteredResult);
