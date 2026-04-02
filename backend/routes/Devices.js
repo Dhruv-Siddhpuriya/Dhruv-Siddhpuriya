@@ -373,13 +373,7 @@ router.get("/:id/usage", async (req, res) => {
 */
 router.get("/:id/usage-history", async (req, res) => {
   try {
-    const cacheKey = `device:history:${req.params.id}`;
-
-    const cached = await client.get(cacheKey);
-    if (cached) {
-      console.log("⚡ History from Redis");
-      return res.json(JSON.parse(cached));
-    }
+  
 
     const device = await Device.findById(req.params.id);
 
@@ -434,10 +428,6 @@ router.get("/:id/usage-history", async (req, res) => {
     const today = new Date().toLocaleDateString("en-CA");
     const filteredResult = result.filter(item => item.date !== today);
 
-    // ✅ STORE CACHE
-    await client.setEx(cacheKey, 300, JSON.stringify(filteredResult));
-
-    console.log("🐢 History from DB");
 
     res.json(filteredResult);
 
