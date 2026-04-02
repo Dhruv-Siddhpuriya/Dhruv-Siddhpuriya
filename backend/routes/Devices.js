@@ -166,18 +166,15 @@ router.patch("/:id", async (req, res) => {
         new: true,
         arrayFilters: isActive ? [] : [{ "last.endTime": null }]
       }
-    );
-    
-    if (!device) return res.status(404).json({ message: "Not found" });
-    
-    await client.del(`devices:user:${device.userId}`);
+    ).select("deviceId deviceName isActive");
+
+    if (!device) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    res.json(device);
     await client.del(`device:${device.deviceId}`);
-    
-    res.json({
-      deviceId: device.deviceId,
-      deviceName: device.deviceName,
-      isActive: device.isActive
-    });
+    await client.del(`devices:user:${device.userId}`);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -292,14 +289,6 @@ router.get("/:id/usage", async (req, res) => {
   try {
     const { date } = req.query;
 
-    const cacheKey = `device:usage:${req.params.id}:${date || "all"}`;
-
-    const cached = await client.get(cacheKey);
-    if (cached) {
-      console.log("⚡ Usage from Redis");
-      return res.json(JSON.parse(cached));
-    }
-
     const device = await Device.findById(req.params.id);
 
     let totalMs = 0;
@@ -332,16 +321,10 @@ router.get("/:id/usage", async (req, res) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
 
-    const response = {
+    res.json({
       totalHours: (totalMs / (1000 * 60 * 60)).toFixed(2),
       formattedTime: `${hours} hr ${minutes} min`
-    };
-
-    await client.setEx(cacheKey, 300, JSON.stringify(response));
-
-    console.log("🐢 Usage from DB");
-
-    res.json(response);
+    });
 
   } catch (err) {
     res.status(500).json(err);
@@ -384,14 +367,6 @@ router.get("/:id/usage", async (req, res) => {
 */
 router.get("/:id/usage-history", async (req, res) => {
   try {
-    const cacheKey = `device:history:${req.params.id}`;
-
-    const cached = await client.get(cacheKey);
-    if (cached) {
-      console.log("⚡ History from Redis");
-      return res.json(JSON.parse(cached));
-    }
-
     const device = await Device.findById(req.params.id);
 
     if (!device) {
@@ -444,11 +419,6 @@ router.get("/:id/usage-history", async (req, res) => {
 
     const today = new Date().toLocaleDateString("en-CA");
     const filteredResult = result.filter(item => item.date !== today);
-
-    // ✅ STORE CACHE
-    await client.setEx(cacheKey, 300, JSON.stringify(filteredResult));
-
-    console.log("🐢 History from DB");
 
     res.json(filteredResult);
 
