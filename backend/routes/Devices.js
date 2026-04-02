@@ -166,15 +166,18 @@ router.patch("/:id", async (req, res) => {
         new: true,
         arrayFilters: isActive ? [] : [{ "last.endTime": null }]
       }
-    ).select("deviceId deviceName isActive");
-
-    if (!device) {
-      return res.status(404).json({ message: "Not found" });
-    }
-
-    res.json(device);
-    await client.del(`device:${device.deviceId}`);
+    );
+    
+    if (!device) return res.status(404).json({ message: "Not found" });
+    
     await client.del(`devices:user:${device.userId}`);
+    await client.del(`device:${device.deviceId}`);
+    
+    res.json({
+      deviceId: device.deviceId,
+      deviceName: device.deviceName,
+      isActive: device.isActive
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -232,7 +235,7 @@ router.get("/device/:deviceId", async (req, res) => {
     const cacheKey = `device:${req.params.deviceId}`;
 
     const cached = await client.get(cacheKey);
-    if (cached) {
+    if (cached) { 
      console.log("⚡ Device from Redis");
       return res.json(JSON.parse(cached));
     }

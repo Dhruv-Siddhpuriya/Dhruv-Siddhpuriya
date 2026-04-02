@@ -1,6 +1,6 @@
 const UserSession = require("../UserSession");
 const router = require("express").Router();
-const client = require("../utils/redisClient"); // ✅ ADD REDIS
+const client = require("../utils/redisClient");
 
 /**
  * GET USER SESSION LOGS
