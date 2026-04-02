@@ -271,6 +271,7 @@ app.post("/login", async (req, res) => {
       sessionId: session._id
     });
 await client.del("charts:country:all:all");
+await client.del("userSessions:all");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -574,6 +575,8 @@ if (!strongPasswordRegex.test(password)) {
             await user.save();
             ChartVersion = Date.now();
              res.status(201).json({ message: "User registered successfully" });
+             await client.del("charts:country:all:all");
+             await client.del("users:all");
       } 
       catch (error) {
         console.error("Register Error:", error);
