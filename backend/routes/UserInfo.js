@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const User = require("../user"); // adjust if your path is different
 const upload = require("../middleware/upload");
+const client = require("../utils/redisClient");
 // 🔹 GET USER PROFILE
 /**
  * @swagger
@@ -21,7 +22,16 @@ const upload = require("../middleware/upload");
  */
 router.get("/:id", async (req, res) => {
   try {
+       const cacheKey = `user:${req.params.id}`;
+       const cached = await client.get(cacheKey);
+    if (cached) {
+      console.log("⚡ User from Redis");
+      return res.json(JSON.parse(cached));
+    }
     const user = await User.findById(req.params.id).select("-password").populate("role");
+
+    await client.setEx(cacheKey, 300, JSON.stringify(user));
+      console.log("🐢 User from DB");
     res.json(user);
   } catch (err) {
     res.status(500).json({ message: err.message });
