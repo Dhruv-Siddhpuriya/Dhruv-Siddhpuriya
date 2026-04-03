@@ -155,91 +155,101 @@ const fetchUserData = async () => {
   return (
     <div className={styles.wrapper}>
       <div className={styles.container}>
-      
-      <div className={styles.profileHeader}>
-  {user.profileImage && (
-    <img
-      src={`${API_BASE_URL}/uploads/${user.profileImage}`}
-      alt="Profile"
-      className={styles.profileImage}
-    />
-  )}
-  <h2>{user.firstName} {user.lastName}</h2>
-</div>
-
-      <div className={styles.grid}>
-        {["firstName","lastName","email","phone","city","state","country"].map(field => (
-          <div key={field} className={styles.field}>
-            <label>{field}</label>
-            <input
-  name={field}
-  value={form[field] || ""}
-  onChange={handleChange}
-  disabled={field === "email" ? true : !edit}
-  className={!edit || field === "email" ? styles.disabled : ""}
-/>
+  
+        {/* LEFT PROFILE CARD */}
+        <div className={styles.sidebar}>
+          <div className={styles.avatarBox}>
+            <img
+              src={
+                user.profileImage
+                  ? `${API_BASE_URL}/uploads/${user.profileImage}`
+                  : "https://ui-avatars.com/api/?name=" +
+                    user.firstName +
+                    "+" +
+                    user.lastName
+              }
+              alt="Profile"
+            />
           </div>
-        ))}
-      </div>
-
-      <div className={styles.actions}>
-      {!edit ? (
-  <Button disableRipple onClick={handleEditClick}>✏️ Edit</Button>
-) : (
-  <Button disableRipple onClick={saveProfile}>💾 Save</Button>
-)}
-        {edit && (
-  <Button variant="outlined" disableRipple onClick={() => {
-    setForm(user);
-    setEdit(false);
-  }}>
-    Cancel
-  </Button>
-)}
-      </div>
-      {customFields.length >0 && (
-              <>
-              <h2 className={styles.sectionTitle}>Custom Fields</h2>
-              <div className={styles.customFieldContainer}>
-                 {
-                  customFields.map((field,index) => 
-                    renderCustomField(field,index)
-                 )}
-              </div>
-              </>
+  
+          <h2>{user.firstName} {user.lastName}</h2>
+          <p>{user.email}</p>
+  
+          <div className={styles.badge}>
+            Active User
+          </div>
+        </div>
+  
+        {/* RIGHT CONTENT */}
+        <div className={styles.content}>
+  
+          <div className={styles.header}>
+            <h3>Profile Details</h3>
+  
+            {!edit ? (
+              <Button onClick={handleEditClick}>Edit</Button>
+            ) : (
+              <Button onClick={saveProfile}>Save</Button>
             )}
+          </div>
+  
+          <div className={styles.grid}>
+            {["firstName","lastName","phone","city","state","country"].map(field => (
+              <div key={field} className={styles.field}>
+                <label>{field}</label>
+                <input
+                  name={field}
+                  value={form[field] || ""}
+                  onChange={handleChange}
+                  disabled={!edit}
+                />
+              </div>
+            ))}
+          </div>
+  
+          {edit && (
+            <div className={styles.cancelBtn}>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setForm(user);
+                  setEdit(false);
+                }}
+              >
+                Cancel
+              </Button>
             </div>
-            <Snackbar
-            
-  open={alertState.open} 
-  autoHideDuration={3000}
-  onClose={(event, reason) => {
-    if (reason === "clickaway") return;
-    setAlertState(prev => ({ ...prev, open: false }));
-  }}
-  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-  TransitionComponent={(props) => <Slide {...props} direction="left" />}
-  sx={{ zIndex: 9999 }}
->
-  <Alert
-    severity={alertState.severity}
-    variant="filled"
-    sx={{
-      backgroundColor:
-        alertState.severity === "success"
-          ? "#065f46"
-          : "#7f1d1d",
-      color: "#fff",
-      boxShadow: "0 15px 40px rgba(0,0,0,0.7)",
-      borderRadius: "12px",
-      fontWeight: 500,
-      minWidth: "320px",
-      opacity: 1,
-    }}
-  >
-    {alertState.message}  {/* ✅ use state message */}
-  </Alert>
-</Snackbar>
+          )}
+  
+          {/* CUSTOM FIELDS */}
+          {customFields.length > 0 && (
+            <>
+              <h3 className={styles.sectionTitle}>Custom Fields</h3>
+              <div className={styles.customFieldContainer}>
+                {customFields.map((field, index) =>
+                  renderCustomField(field, index)
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+  
+      {/* Snackbar (same as yours) */}
+      <Snackbar
+        open={alertState.open}
+        autoHideDuration={3000}
+        onClose={(event, reason) => {
+          if (reason === "clickaway") return;
+          setAlertState(prev => ({ ...prev, open: false }));
+        }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        TransitionComponent={(props) => <Slide {...props} direction="left" />}
+      >
+        <Alert severity={alertState.severity} variant="filled">
+          {alertState.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
