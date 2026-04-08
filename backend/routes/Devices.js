@@ -146,17 +146,18 @@ router.patch("/:id", async (req, res) => {
     const { isActive } = req.body;
 
     const update = {
-      isActive
+      $set: { isActive }
     };
 
     if (isActive) {
       update.$push = {
-        activityLogs: { startTime: new Date(), endTime: null }
+        activityLogs: {
+          startTime: new Date(),
+          endTime: null
+        }
       };
     } else {
-      update.$set = {
-        "activityLogs.$[last].endTime": new Date()
-      };
+      update.$set["activityLogs.$[last].endTime"] = new Date();
     }
 
     const device = await Device.findOneAndUpdate(
@@ -166,15 +167,19 @@ router.patch("/:id", async (req, res) => {
         new: true,
         arrayFilters: isActive ? [] : [{ "last.endTime": null }]
       }
-    ).select("deviceId deviceName isActive");
+    ).select("deviceId deviceName isActive userId");
 
     if (!device) {
       return res.status(404).json({ message: "Not found" });
     }
 
-    res.json(device);
+    // ✅ CLEAR CACHE FIRST
     await client.del(`device:${device.deviceId}`);
     await client.del(`devices:user:${device.userId}`);
+
+    // ✅ SEND RESPONSE ONCE
+    res.json(device);
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
